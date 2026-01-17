@@ -26,107 +26,161 @@ st.set_page_config(
 )
 
 # ============================================================================
-# ESTILOS CSS PERSONALIZADOS - HÍBRIDO (LIMPIO + COLOR)
+# ESTILOS CSS PERSONALIZADOS - ESTILO CONFLUENCE
 # ============================================================================
 
 st.markdown("""
 <style>
-    /* Tipografía más cálida - no ChatGPT style */
+    /* Tipografía clara y profesional estilo Confluence */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: #172B4D;
     }
     
-    /* Títulos más limpios */
+    /* Títulos limpios estilo Confluence */
     h1 {
-        font-weight: 700 !important;
-        color: #1a1a1a !important;
+        font-weight: 600 !important;
+        color: #172B4D !important;
         margin-bottom: 0.5rem !important;
+        font-size: 2rem !important;
     }
     
     h2 {
         font-weight: 600 !important;
-        color: #2c3e50 !important;
+        color: #172B4D !important;
         margin-top: 2rem !important;
+        font-size: 1.5rem !important;
     }
     
     h3 {
         font-weight: 500 !important;
-        color: #34495e !important;
+        color: #172B4D !important;
+        font-size: 1.2rem !important;
     }
     
     /* Subtítulo principal */
     .subtitle-main {
-        font-size: 1.3rem;
-        color: #555;
+        font-size: 1.2rem;
+        color: #5E6C84;
         font-weight: 400;
         margin-bottom: 2rem;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
     }
     
-    /* Cards más limpias - estilo híbrido */
-    .stMetric {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-    }
-    
-    /* Botones con color de acento */
-    .stButton>button {
-        background-color: #2ecc71;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.6rem 2rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        background-color: #27ae60;
-        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
-    }
-    
-    /* Sidebar más limpia */
+    /* Sidebar estilo Confluence */
     [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
+        background-color: #F4F5F7;
+        border-right: 1px solid #DFE1E6;
     }
     
-    /* Espaciado generoso */
-    .block-container {
-        padding-top: 3rem;
-        padding-bottom: 3rem;
+    [data-testid="stSidebar"] h1 {
+        color: #172B4D !important;
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        padding-bottom: 1rem;
     }
     
-    /* Explicaciones con fondo suave */
+    /* Radio buttons en sidebar estilo Confluence */
+    [data-testid="stSidebar"] .stRadio > label {
+        font-weight: 500;
+        color: #172B4D;
+    }
+    
+    /* Cards limpias estilo Confluence */
+    .stMetric {
+        background-color: #FAFBFC;
+        padding: 1.2rem;
+        border-radius: 3px;
+        border: 1px solid #DFE1E6;
+    }
+    
+    /* Info boxes estilo Confluence */
     .info-box {
-        background-color: #f0f7ff;
-        border-left: 4px solid #3498db;
+        background-color: #DEEBFF;
+        border-left: 3px solid #0052CC;
         padding: 1rem 1.5rem;
-        border-radius: 4px;
+        border-radius: 3px;
         margin: 1rem 0;
     }
     
-    /* Indicadores */
+    .info-box h3 {
+        color: #0747A6 !important;
+        margin-top: 0 !important;
+    }
+    
+    .info-box p, .info-box ul {
+        color: #172B4D;
+    }
+    
+    /* Indicator boxes estilo Confluence */
     .indicator-box {
-        background-color: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        background-color: #FAFBFC;
+        border: 1px solid #DFE1E6;
+        border-radius: 3px;
         padding: 1rem;
         margin: 0.5rem 0;
+        transition: all 0.2s ease;
+    }
+    
+    .indicator-box:hover {
+        border-color: #B3D4FF;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
     }
     
     .indicator-title {
         font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 0.3rem;
+        color: #172B4D;
+        margin-bottom: 0.4rem;
+        font-size: 1rem;
     }
     
     .indicator-desc {
         font-size: 0.9rem;
-        color: #666;
+        color: #5E6C84;
+        line-height: 1.5;
+    }
+    
+    /* Botones estilo Confluence */
+    .stButton>button {
+        background-color: #0052CC;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+    
+    .stButton>button:hover {
+        background-color: #0747A6;
+        box-shadow: 0 2px 4px rgba(9, 30, 66, 0.15);
+    }
+    
+    /* Espaciado generoso estilo Confluence */
+    .block-container {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+        max-width: 1200px;
+    }
+    
+    /* Selectbox y inputs estilo Confluence */
+    .stSelectbox, .stMultiSelect, .stTextInput {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Tablas estilo Confluence */
+    .dataframe {
+        border: 1px solid #DFE1E6 !important;
+        border-radius: 3px;
+    }
+    
+    /* Líneas divisorias más sutiles */
+    hr {
+        border-color: #DFE1E6 !important;
+        margin: 2rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -289,7 +343,7 @@ def main():
     st.markdown("---")
     
     # SIDEBAR - NAVEGACIÓN
-    st.sidebar.title("📊 Navegación")
+    st.sidebar.title("Navegación")
     pagina = st.sidebar.radio(
         "Selecciona una función:",
         ["🏠 Inicio",
@@ -354,7 +408,7 @@ def main():
         st.markdown("##")
         
         # Explicación de indicadores
-        st.subheader("📍 Los 6 indicadores que medimos")
+        st.subheader("Los 6 indicadores que medimos")
         st.markdown("Evaluamos cada alimento con estos criterios ambientales:")
         
         col1, col2 = st.columns(2)
@@ -406,7 +460,7 @@ def main():
         st.markdown("##")
         
         # Estadísticas rápidas
-        st.subheader("📊 Un vistazo a los datos")
+        st.subheader("Un vistazo a los datos")
         
         col1, col2, col3, col4 = st.columns(4)
         
@@ -438,7 +492,9 @@ def main():
         
         producto_sel = st.selectbox(
             "Selecciona un producto:",
-            options=sorted(df['Producto'].unique())
+            options=sorted(df['Producto'].unique()),
+            index=None,
+            placeholder="Elige un producto de la lista..."
         )
         
         if producto_sel:
@@ -543,12 +599,15 @@ def main():
     # ========================================================================
     # PÁGINA: EVALUAR NUEVO PRODUCTO
     # ========================================================================
-    elif pagina == "➕ Evaluar Nuevo Producto":
+    elif pagina == "Evaluar Nuevo Producto":
         st.header("➕ Evaluar Nuevo Producto")
         st.markdown("Ingresa los datos de un alimento que no está en nuestra base de datos")
         st.markdown("##")
         
-        nombre_nuevo = st.text_input("Nombre del producto:")
+        nombre_nuevo = st.text_input(
+            "Nombre del producto:",
+            placeholder="Ejemplo: Sandía, Quinoa, Pescado blanco..."
+        )
         
         st.markdown("### 📊 Ingresa los indicadores ambientales")
         st.markdown("*Si no conoces algún valor exacto, puedes usar estimaciones basadas en productos similares*")
@@ -716,7 +775,8 @@ def main():
         productos_comparar = st.multiselect(
             "Selecciona productos:",
             options=sorted(df['Producto'].unique()),
-            max_selections=5
+            max_selections=5,
+            placeholder="Elige hasta 5 productos para comparar..."
         )
         
         if len(productos_comparar) >= 2:
@@ -1073,7 +1133,7 @@ def main():
         ## 📊 Ecuación de Sustentabilidad Alimentaria
         
         **Proyecto:** Evaluación multi-dimensional de sostenibilidad alimentaria  
-        **Autora:** Laura Ochoa M.  
+        **Investigadora:** Laura Ochoa M.  
         **LinkedIn:** [linkedin.com/in/lauraochoam](https://www.linkedin.com/in/lauraochoam/)  
         **Región:** México / Sonora  
         **Fecha:** Enero 2026  
