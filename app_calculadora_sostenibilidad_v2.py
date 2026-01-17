@@ -1,7 +1,5 @@
 """
-CALCULADORA DE SOSTENIBILIDAD ALIMENTARIA v2.0
-Ecuación de Sustentabilidad - México/Sonora
-VERSIÓN ACTUALIZADA con Análisis Dual de Escenarios
+Calculadora de sostenibilidad alimentaria
 
 Autor: Laura
 Fecha: Enero 2026
@@ -40,14 +38,14 @@ def cargar_datos():
             '/mnt/user-data/outputs/dataset_con_scores_A_y_B.csv',
             '/home/claude/dataset_con_scores_A_y_B.csv'
         ]
-
+        
         for ruta in rutas:
             try:
                 df = pd.read_csv(ruta)
                 return df
-            except (FileNotFoundError, pd.errors.EmptyDataError, pd.errors.ParserError):
+            except:
                 continue
-
+        
         st.error("⚠️ No se pudo cargar el dataset. Asegúrate de tener el archivo CSV.")
         return None
     except Exception as e:
@@ -68,11 +66,11 @@ def cargar_productos_robustos():
             try:
                 df = pd.read_csv(ruta)
                 return df
-            except (FileNotFoundError, pd.errors.EmptyDataError, pd.errors.ParserError):
+            except:
                 continue
-
+        
         return None
-    except (FileNotFoundError, pd.errors.EmptyDataError, pd.errors.ParserError):
+    except:
         return None
 
 def normalizar_inverso(valor, min_val, max_val):
@@ -147,6 +145,44 @@ def clasificar_score(score):
         return 'Moderado', '🟠'
     else:
         return 'Bajo', '🔴'
+
+def categorizar_producto(producto):
+    """Asigna categoría alimentaria a un producto"""
+    categorias = {
+        'Frutas': ['Aguacate', 'Mango', 'Naranja', 'Plátano', 'Limón', 'Manzana', 'Uva', 'Papaya'],
+        'Vegetales': ['Tomate', 'Calabaza', 'Cebolla', 'Zanahoria', 'Chile', 'Brócoli', 'Papa', 'Lechuga'],
+        'Leguminosas': ['Frijol', 'Garbanzo', 'Lenteja'],
+        'Cereales': ['Maíz tortilla', 'Avena', 'Pan blanco', 'Arroz', 'Pasta'],
+        'Proteína Animal': ['Res', 'Cerdo', 'Pollo', 'Huevo', 'Leche', 'Queso', 'Yogurt'],
+        'Azúcares y Procesados': ['Azúcar', 'Refresco']
+    }
+    
+    for cat, prods in categorias.items():
+        if producto in prods:
+            return cat
+    return 'Otros'
+
+def obtener_alternativas_sostenibles(producto, df, escenario='A', top_n=3):
+    """
+    Obtiene alternativas más sostenibles del mismo grupo alimentario
+    """
+    score_col = 'Score_México' if escenario == 'A' else 'Score_México_B'
+    
+    # Categorizar productos
+    df_cat = df.copy()
+    df_cat['Categoria'] = df_cat['Producto'].apply(categorizar_producto)
+    
+    # Obtener categoría del producto actual
+    categoria = categorizar_producto(producto)
+    
+    # Filtrar por misma categoría
+    df_mismo_grupo = df_cat[df_cat['Categoria'] == categoria].copy()
+    
+    # Ordenar por score y excluir el producto actual
+    df_mismo_grupo = df_mismo_grupo[df_mismo_grupo['Producto'] != producto]
+    df_mismo_grupo = df_mismo_grupo.nlargest(top_n, score_col)
+    
+    return df_mismo_grupo[['Producto', score_col, 'CF_kgCO2eq_kg', 'WF_L_kg', 'Waste_pct']]
 
 def exportar_resultados_excel(df, escenario='A'):
     """Exporta resultados a Excel"""
@@ -610,7 +646,9 @@ def main():
         st.header("🌍 Impacto Ambiental de Elecciones Alimentarias")
         st.markdown("""
         Visualiza el impacto potencial de cambiar tu patrón alimentario hacia 
-        productos más sostenibles.
+        productos más sostenibles **del mismo grupo alimentario**.
+        
+        💡 **Tip:** Compara productos similares (ej: carne de res vs pollo, o manzana vs naranja)
         """)
         
         if df is None:
@@ -629,18 +667,51 @@ def main():
             productos_actuales = st.multiselect(
                 "Selecciona productos:",
                 options=sorted(df['Producto'].tolist()),
-                default=df.nsmallest(5, score_col)['Producto'].tolist()[:3],
-                key='actuales'
+                default=[],
+                key='actuales',
+                help="Selecciona los productos que consumes actualmente"
             )
+            
+            # Mostrar categorías de productos seleccionados
+            if len(productos_actuales) > 0:
+                st.markdown("**Categorías seleccionadas:**")
+                categorias_actuales = {}
+                for prod in productos_actuales:
+                    cat = categorizar_producto(prod)
+                    if cat not in categorias_actuales:
+                        categorias_actuales[cat] = []
+                    categorias_actuales[cat].append(prod)
+                
+                for cat, prods in categorias_actuales.items():
+                    st.caption(f"• {cat}: {', '.join(prods)}")
         
         with col2:
-            st.markdown("**Dieta Sostenible / Alternativas:**")
-            productos_sostenibles = st.multiselect(
-                "Selecciona productos:",
-                options=sorted(df['Producto'].tolist()),
-                default=df.nlargest(5, score_col)['Producto'].tolist()[:3],
-                key='sostenibles'
-            )
+            st.markdown("**Alternativas Sostenibles Sugeridas:**")
+            
+            if len(productos_actuales) > 0:
+                # Generar sugerencias automáticas basadas en categoría
+                sugerencias = []
+                for prod in productos_actuales:
+                    alternativas = obtener_alternativas_sostenibles(prod, df, escenario, top_n=2)
+                    sugerencias.extend(alternativas['Producto'].tolist())
+                
+                # Eliminar duplicados y ordenar
+                sugerencias = list(set(sugerencias))
+                
+                productos_sostenibles = st.multiselect(
+                    "Alternativas del mismo grupo alimentario:",
+                    options=sorted(df['Producto'].tolist()),
+                    default=sugerencias[:3] if len(sugerencias) >= 3 else sugerencias,
+                    key='sostenibles',
+                    help="Productos más sostenibles de las mismas categorías"
+                )
+                
+                # Mostrar info de sugerencias
+                if len(sugerencias) > 0:
+                    st.info(f"💡 Se sugieren {len(sugerencias)} alternativas sostenibles del mismo grupo alimentario")
+            else:
+                st.warning("⬅️ Primero selecciona productos en 'Dieta Actual'")
+                productos_sostenibles = []
         
         if len(productos_actuales) > 0 and len(productos_sostenibles) > 0:
             df_actual = df[df['Producto'].isin(productos_actuales)]
@@ -781,6 +852,80 @@ def main():
                 st.warning("""
                 Los productos actuales seleccionados ya tienen un perfil relativamente sostenible.
                 Intenta comparar con productos con mayor impacto para ver el potencial de mejora.
+                """)
+            
+            # Recomendaciones por categoría
+            st.markdown("---")
+            st.subheader("🎯 Recomendaciones Específicas por Categoría")
+            
+            # Analizar categorías en dieta actual
+            categorias_con_mejora = {}
+            for prod in productos_actuales:
+                cat = categorizar_producto(prod)
+                score_actual = df[df['Producto'] == prod][score_col].values[0]
+                
+                # Obtener mejor alternativa de la categoría
+                alternativas = obtener_alternativas_sostenibles(prod, df, escenario, top_n=1)
+                
+                if len(alternativas) > 0:
+                    mejor_alt = alternativas.iloc[0]
+                    mejora = mejor_alt[score_col] - score_actual
+                    
+                    if mejora > 5:  # Solo si hay mejora significativa
+                        if cat not in categorias_con_mejora:
+                            categorias_con_mejora[cat] = []
+                        
+                        categorias_con_mejora[cat].append({
+                            'actual': prod,
+                            'alternativa': mejor_alt['Producto'],
+                            'mejora_score': mejora,
+                            'reduccion_cf': ((df[df['Producto']==prod]['CF_kgCO2eq_kg'].values[0] - 
+                                            mejor_alt['CF_kgCO2eq_kg']) / 
+                                           df[df['Producto']==prod]['CF_kgCO2eq_kg'].values[0] * 100)
+                        })
+            
+            if len(categorias_con_mejora) > 0:
+                for cat, recomendaciones in categorias_con_mejora.items():
+                    with st.expander(f"**{cat}** ({len(recomendaciones)} recomendaciones)", expanded=True):
+                        for rec in recomendaciones:
+                            st.markdown(f"""
+                            🔄 **{rec['actual']}** → **{rec['alternativa']}**
+                            - Mejora en score: +{rec['mejora_score']:.1f} puntos
+                            - Reducción de carbono: {rec['reduccion_cf']:.1f}%
+                            """)
+            else:
+                st.info("""
+                ✅ Los productos seleccionados ya son las opciones más sostenibles 
+                de sus respectivas categorías. ¡Excelente elección!
+                """)
+            
+            # Ejemplos de sustituciones comunes
+            st.markdown("---")
+            st.subheader("📝 Ejemplos de Sustituciones Sostenibles")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **Proteína Animal:**
+                - Res → Pollo (reducción ~90% carbono)
+                - Cerdo → Huevo (reducción ~85% carbono)
+                - Res → Leguminosas (reducción ~95% carbono)
+                
+                **Frutas:**
+                - Manzana → Plátano (menor huella hídrica)
+                - Uva → Naranja (producción local)
+                """)
+            
+            with col2:
+                st.markdown("""
+                **Vegetales:**
+                - Brócoli → Calabaza (menor desperdicio)
+                - Lechuga → Tomate (mejor score general)
+                
+                **Cereales:**
+                - Arroz → Maíz tortilla (producción local)
+                - Pasta → Avena (menor procesamiento)
                 """)
     
     # ========================================================================
@@ -1073,7 +1218,8 @@ def main():
         ### 📊 Ecuación de Sustentabilidad Alimentaria v2.0
         
         **Proyecto:** Evaluación multi-dimensional de sostenibilidad alimentaria  
-        **Investigadora:** Laura  
+        **Investigadora:** Laura Ochoa M.  
+        **Contacto:** [LinkedIn](https://www.linkedin.com/in/lauraochoam/)  
         **Región:** México / Sonora  
         **Fecha:** Enero 2026  
         **Versión:** 2.0 (Análisis Dual de Escenarios)
@@ -1113,11 +1259,17 @@ def main():
         
         ### 📚 Fuentes de Datos
         
-        - **Carbon Footprint:** López-Olmedo et al. (2022)
-        - **Water Footprint:** SU-EATABLE LIFE Database + Mekonnen & Hoekstra
-        - **Land Use:** FAO Mexico Production Data (FAOSTAT)
-        - **Waste:** FAO Food Loss Database - México (2016-2017)
-        - **NOVA:** Clasificación oficial FAO/OPS
+        Este proyecto integra datos de 5 fuentes científicas verificadas:
+        
+        1. López-Olmedo, N., Popkin, B. M., & Taillie, L. S. (2022). The sociodemographic distribution of beverages sold in Mexico and their water and carbon footprints: 2016–2020. *Frontiers in Nutrition, 9*, 896163. https://doi.org/10.3389/fnut.2022.896163
+        
+        2. Clune, S., Crossin, E., & Verghese, K. (2017). Systematic review of greenhouse gas emissions for different fresh food categories. *Journal of Cleaner Production, 140*, 766–783. https://doi.org/10.1016/j.jclepro.2016.04.082
+        
+        3. Mekonnen, M. M., & Hoekstra, A. Y. (2011). The green, blue and grey water footprint of crops and derived crop products. *Hydrology and Earth System Sciences, 15*(5), 1577–1600. https://doi.org/10.5194/hess-15-1577-2011
+        
+        4. Food and Agriculture Organization of the United Nations. (2021). *FAOSTAT statistical database*. https://www.fao.org/faostat/
+        
+        5. Monteiro, C. A., Cannon, G., Levy, R. B., Moubarac, J. C., Louzada, M. L., Rauber, F., Khandpur, N., Cediel, G., Neri, D., Martinez-Steele, E., Baraldi, L. G., & Jaime, P. C. (2019). Ultra-processed foods: What they are and how to identify them. *Public Health Nutrition, 22*(5), 936–941. https://doi.org/10.1017/S1368980018003762
         
         **Dataset:** 36 productos validados con datos específicos de México
         
@@ -1191,18 +1343,21 @@ def main():
         
         ### 📧 Contacto
         
+        **Laura Ochoa M.**  
+        LinkedIn: [linkedin.com/in/lauraochoam](https://www.linkedin.com/in/lauraochoam/)
+        
         Para más información sobre esta herramienta, el proyecto o los datos utilizados,
-        contacta a Laura.
+        por favor contacta a través de LinkedIn.
         
         ---
         
         ### 📄 Licencia y Uso
         
-        Esta herramienta está diseñada para fines educativos y de investigación.
+        Esta herramienta está diseñada para fines educativos, de investigación y políticas públicas.
         Los datos y metodología están documentados y son reproducibles.
         
-        **Código abierto:** Disponible para colaboración científica
-        **Datos transparentes:** Fuentes citadas y verificables
+        **Código abierto:** Disponible para colaboración científica  
+        **Datos transparentes:** Fuentes citadas y verificables  
         **Metodología replicable:** Documentación completa disponible
         """)
 
