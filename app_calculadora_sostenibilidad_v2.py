@@ -937,9 +937,9 @@ def main():
         if "Top 15" in tipo_ranking:
             st.subheader("🏆 Top 15 - Los Más Sustentables")
             
-            top15 = df.nlargest(15, score_col)[['Producto', score_col, 'CF_kgCO2eq_kg', 
+            top15 = df.nlargest(15, score_col)[['Producto', score_col, 'CF_kgCO2eq_kg',
                                                   'WF_L_kg', 'LU_m2_kg', 'Waste_pct']].copy()
-            top15['Posición'] = range(1, 16)
+            top15['Posición'] = range(1, len(top15) + 1)
             top15 = top15[['Posición', 'Producto', score_col, 'CF_kgCO2eq_kg', 
                           'WF_L_kg', 'LU_m2_kg', 'Waste_pct']]
             
@@ -978,9 +978,10 @@ def main():
         elif "Bottom 10" in tipo_ranking:
             st.subheader("⚠️ Bottom 10 - Los Menos Sustentables")
             
-            bottom10 = df.nsmallest(10, score_col)[['Producto', score_col, 'CF_kgCO2eq_kg', 
+            bottom10 = df.nsmallest(10, score_col)[['Producto', score_col, 'CF_kgCO2eq_kg',
                                                      'WF_L_kg', 'LU_m2_kg', 'Waste_pct']].copy()
-            bottom10['Posición'] = range(len(df), len(df)-10, -1)
+            n_items = len(bottom10)
+            bottom10['Posición'] = range(len(df), len(df) - n_items, -1)
             bottom10 = bottom10[['Posición', 'Producto', score_col, 'CF_kgCO2eq_kg', 
                                 'WF_L_kg', 'LU_m2_kg', 'Waste_pct']]
             
