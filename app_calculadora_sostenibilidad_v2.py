@@ -622,11 +622,18 @@ def main():
             fig.update_layout(showlegend=False, height=300)
             st.plotly_chart(fig, use_container_width=True)
         
-        # Calcular reducciones
-        reduccion_cf = ((comparacion.loc[1, 'Carbono'] - comparacion.loc[0, 'Carbono']) / 
-                       comparacion.loc[1, 'Carbono'] * 100)
-        reduccion_agua = ((comparacion.loc[1, 'Agua'] - comparacion.loc[0, 'Agua']) / 
-                         comparacion.loc[1, 'Agua'] * 100)
+        # Calcular reducciones (con protección contra división por cero)
+        if comparacion.loc[1, 'Carbono'] > 0:
+            reduccion_cf = ((comparacion.loc[1, 'Carbono'] - comparacion.loc[0, 'Carbono']) /
+                           comparacion.loc[1, 'Carbono'] * 100)
+        else:
+            reduccion_cf = 0.0
+
+        if comparacion.loc[1, 'Agua'] > 0:
+            reduccion_agua = ((comparacion.loc[1, 'Agua'] - comparacion.loc[0, 'Agua']) /
+                             comparacion.loc[1, 'Agua'] * 100)
+        else:
+            reduccion_agua = 0.0
         
         st.success(f"""
         ### 💡 Impacto Potencial
@@ -732,17 +739,14 @@ def main():
                 'Desperdicio': df_sostenible['Waste_pct'].mean()
             }
             
-            # Reducciones
-            reduccion = {
-                'Carbono': ((impacto_actual['Carbono'] - impacto_sostenible['Carbono']) / 
-                           impacto_actual['Carbono'] * 100),
-                'Agua': ((impacto_actual['Agua'] - impacto_sostenible['Agua']) / 
-                        impacto_actual['Agua'] * 100),
-                'Suelo': ((impacto_actual['Suelo'] - impacto_sostenible['Suelo']) / 
-                         impacto_actual['Suelo'] * 100),
-                'Desperdicio': ((impacto_actual['Desperdicio'] - impacto_sostenible['Desperdicio']) / 
-                               impacto_actual['Desperdicio'] * 100)
-            }
+            # Reducciones (con protección contra división por cero)
+            reduccion = {}
+            for indicador in ['Carbono', 'Agua', 'Suelo', 'Desperdicio']:
+                if impacto_actual[indicador] > 0:
+                    reduccion[indicador] = ((impacto_actual[indicador] - impacto_sostenible[indicador]) /
+                                           impacto_actual[indicador] * 100)
+                else:
+                    reduccion[indicador] = 0.0
             
             st.markdown("---")
             st.subheader("📉 Reducción Potencial de Impacto")
@@ -874,14 +878,19 @@ def main():
                     if mejora > 5:  # Solo si hay mejora significativa
                         if cat not in categorias_con_mejora:
                             categorias_con_mejora[cat] = []
-                        
+
+                        # Calcular reducción de carbono con protección contra división por cero
+                        cf_actual = df[df['Producto']==prod]['CF_kgCO2eq_kg'].values[0]
+                        if cf_actual > 0:
+                            reduccion_cf = ((cf_actual - mejor_alt['CF_kgCO2eq_kg']) / cf_actual * 100)
+                        else:
+                            reduccion_cf = 0.0
+
                         categorias_con_mejora[cat].append({
                             'actual': prod,
                             'alternativa': mejor_alt['Producto'],
                             'mejora_score': mejora,
-                            'reduccion_cf': ((df[df['Producto']==prod]['CF_kgCO2eq_kg'].values[0] - 
-                                            mejor_alt['CF_kgCO2eq_kg']) / 
-                                           df[df['Producto']==prod]['CF_kgCO2eq_kg'].values[0] * 100)
+                            'reduccion_cf': reduccion_cf
                         })
             
             if len(categorias_con_mejora) > 0:
