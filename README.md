@@ -51,8 +51,6 @@ El proyecto implementa un sistema de scoring ponderado que integra:
 4. **Score de Origen** (local vs importado)
 5. **Porcentaje de Desperdicio** (datos FAO México)
 6. **Clasificación NOVA** (nivel de procesamiento)
-7. **Densidad Nutricional** (score compuesto)
-8. **Accesibilidad Económica** (precio relativo)
 
 ### Metodología de Análisis
 
@@ -260,7 +258,7 @@ El modelo clasifica productos en 5 categorías basadas en su score final:
 ## 👩‍🔬 Sobre el Proyecto
 
 **Desarrollado por:** Laura Ochoa | Biotecnóloga  
-**LinkedIn:** [linkedin.com/in/laura-ochoa](https://www.linkedin.com/in/laura-ochoa)  
+**LinkedIn:** [linkedin.com/in/laura-ochoa](https://www.linkedin.com/in/lauraochoam/)  
 **GitHub:** [@laura8am](https://github.com/laura8am)
 
 **Objetivo:** Portfolio project para transición a roles de Data Analysis en sustentabilidad ambiental y sistemas alimentarios.
