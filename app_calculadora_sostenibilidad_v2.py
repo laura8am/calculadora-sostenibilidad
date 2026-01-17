@@ -1073,7 +1073,7 @@ def main():
         ## 📊 Ecuación de Sustentabilidad Alimentaria
         
         **Proyecto:** Evaluación multi-dimensional de sostenibilidad alimentaria  
-        **Investigadora:** Laura Ochoa M.  
+        **Autora:** Laura Ochoa M.  
         **LinkedIn:** [linkedin.com/in/lauraochoam](https://www.linkedin.com/in/lauraochoam/)  
         **Región:** México / Sonora  
         **Fecha:** Enero 2026  
