@@ -5,13 +5,13 @@
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://calculadora-sostenibilidad-y3lzywreofv7qpkpitl4tq.streamlit.app/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-**[🚀 Ver App en Vivo](https://calculadora-sostenibilidad-y3lzywreofv7qpkpitl4tq.streamlit.app/)** | **[📊 Ver Análisis](#metodología-detallada)**
+**[🚀 Ver App en Vivo](https://calculadora-sostenibilidad-y3lzywreofv7qpkpitl4tq.streamlit.app/)**
 
 ---
 
 ## 📌 Resumen Ejecutivo
 
-Este proyecto desarrolla un sistema de evaluación cuantitativa de sustentabilidad alimentaria específicamente adaptado al contexto mexicano. A través de análisis estadístico riguroso de 36 productos alimenticios usando 8 indicadores ambientales, el modelo identifica patrones de consumo sustentable y cuantifica su impacto potencial.
+Este proyecto desarrolla un sistema de evaluación cuantitativa de sustentabilidad alimentaria específicamente adaptado al contexto mexicano. A través de análisis estadístico riguroso de 36 productos alimenticios usando 6 indicadores ambientales, el modelo identifica patrones de consumo sustentable y cuantifica su impacto potencial.
 
 **Impacto potencial identificado:** Siguiendo las recomendaciones del modelo, los consumidores podrían reducir:
 - 🌍 **95% de huella de carbono**
@@ -44,7 +44,7 @@ La mayoría de herramientas de evaluación de sustentabilidad alimentaria:
 
 El proyecto implementa un sistema de scoring ponderado que integra:
 
-**8 Indicadores Ambientales:**
+**6 Indicadores Ambientales:**
 1. **Huella de Carbono** (kg CO₂eq/kg)
 2. **Huella Hídrica** (L/kg)
 3. **Uso de Suelo** (m²/kg)
@@ -215,8 +215,6 @@ pytest -v
 | SU-EATABLE LIFE Database | Huella de Carbono, Hídrica, Suelo | Dataset europeo peer-reviewed |
 | López-Olmedo et al. (2022) | Clasificación NOVA | Publicación científica mexicana |
 | FAO México | Porcentaje de Desperdicio | Datos oficiales regionales |
-| PROFECO | Accesibilidad Económica | Precios mercado mexicano |
-| ENSANUT | Densidad Nutricional | Encuesta nacional de salud |
 
 ### Escenarios de Ponderación
 
@@ -258,7 +256,7 @@ El modelo clasifica productos en 5 categorías basadas en su score final:
 ## 👩‍🔬 Sobre el Proyecto
 
 **Desarrollado por:** Laura Ochoa | Biotecnóloga  
-**LinkedIn:** [linkedin.com/in/laura-ochoa](https://www.linkedin.com/in/lauraochoam/)  
+**LinkedIn:** [linkedin.com/in/lauraochoam](https://www.linkedin.com/in/lauraochoam/)  
 **GitHub:** [@laura8am](https://github.com/laura8am)
 
 **Objetivo:** Portfolio project para transición a roles de Data Analysis en sustentabilidad ambiental y sistemas alimentarios.
@@ -279,7 +277,7 @@ Este proyecto surge de la necesidad de herramientas de evaluación de sustentabi
 ## 📬 Contacto
 
 ¿Preguntas sobre la metodología? ¿Interesado en colaborar?  
-Contáctame en [LinkedIn](https://www.linkedin.com/in/laura-ochoa)
+Contáctame en [LinkedIn](https://www.linkedin.com/in/lauraochoam/)
 
 ---
 
