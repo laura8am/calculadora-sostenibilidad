@@ -199,14 +199,14 @@ def cargar_datos():
             '/home/claude/dataset_con_scores_A_y_B.csv',
             '/mnt/project/dataset_con_scores_A_y_B.csv'
         ]
-        
+
         for ruta in rutas:
             try:
                 df = pd.read_csv(ruta)
                 return df
-            except:
+            except Exception:
                 continue
-        
+
         st.error("⚠️ No se pudo cargar el dataset. Asegúrate de tener el archivo CSV.")
         return None
     except Exception as e:
@@ -228,11 +228,11 @@ def cargar_productos_robustos():
             try:
                 df = pd.read_csv(ruta)
                 return df
-            except:
+            except Exception:
                 continue
-        
+
         return None
-    except:
+    except Exception:
         return None
 
 def normalizar_inverso(valor, min_val, max_val):
