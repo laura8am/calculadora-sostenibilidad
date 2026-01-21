@@ -5,13 +5,17 @@ Tests cover:
 - normalizar_inverso(): Value normalization logic
 - calcular_score_producto(): Core sustainability scoring algorithm
 - clasificar_score(): Score classification into categories
+- exportar_resultados_excel(): Excel export functionality
 """
 
 import pytest
+import pandas as pd
+from io import BytesIO
 from app_calculadora_sostenibilidad_v2 import (
     normalizar_inverso,
     calcular_score_producto,
-    clasificar_score
+    clasificar_score,
+    exportar_resultados_excel
 )
 
 
@@ -559,3 +563,376 @@ class TestIntegrationScenarios:
 
         assert pytest.approx(score, rel=1e-2) == expected
         assert pytest.approx(score, rel=1e-2) == 75.0
+
+
+class TestExportarResultadosExcel:
+    """Test suite for the exportar_resultados_excel function."""
+
+    @pytest.fixture
+    def sample_dataframe(self):
+        """Create a sample dataframe for testing."""
+        data = {
+            'Producto': ['Sandía', 'Res', 'Pollo', 'Zanahoria', 'Manzana', 'Café',
+                        'Guayaba', 'Papaya', 'Uva', 'Lenteja', 'Avena', 'Melón',
+                        'Piña', 'Tomate', 'Lechuga'],
+            'CF_kgCO2eq_kg': [0.5, 60.0, 6.9, 0.4, 0.4, 28.5, 0.28, 0.3, 1.1, 0.9, 2.5, 0.6, 0.7, 1.4, 0.5],
+            'WF_L_kg': [235, 15400, 4325, 131, 822, 18900, 400, 200, 850, 5000, 2400, 300, 400, 214, 237],
+            'LU_m2_kg': [0.2, 326, 7.1, 0.5, 0.6, 21.5, 0.25, 0.18, 1.2, 3.4, 7.6, 0.3, 0.4, 0.8, 0.7],
+            'Origin_Score': [0, 100, 50, 0, 50, 100, 0, 0, 50, 0, 50, 0, 50, 0, 0],
+            'Waste_pct': [0.4, 21.2, 12.4, 14.1, 12.2, 2.0, 5.5, 7.1, 45.5, 3.1, 1.5, 8.2, 9.5, 17.8, 25.6],
+            'NOVA': [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+            'Score_México': [95.2, 25.3, 68.4, 92.1, 78.5, 45.2, 98.7, 96.3, 60.1, 88.9, 75.3, 91.4, 85.6, 82.3, 70.5],
+            'Score_México_B': [96.1, 23.8, 67.2, 93.0, 77.9, 46.5, 99.2, 97.1, 58.3, 89.7, 76.1, 92.2, 84.9, 81.5, 69.2]
+        }
+        return pd.DataFrame(data)
+
+    @pytest.fixture
+    def small_dataframe(self):
+        """Create a small dataframe with only 5 products for edge case testing."""
+        data = {
+            'Producto': ['Sandía', 'Res', 'Pollo', 'Zanahoria', 'Manzana'],
+            'CF_kgCO2eq_kg': [0.5, 60.0, 6.9, 0.4, 0.4],
+            'WF_L_kg': [235, 15400, 4325, 131, 822],
+            'LU_m2_kg': [0.2, 326, 7.1, 0.5, 0.6],
+            'Origin_Score': [0, 100, 50, 0, 50],
+            'Waste_pct': [0.4, 21.2, 12.4, 14.1, 12.2],
+            'NOVA': [1, 1, 1, 1, 1],
+            'Score_México': [95.2, 25.3, 68.4, 92.1, 78.5],
+            'Score_México_B': [96.1, 23.8, 67.2, 93.0, 77.9]
+        }
+        return pd.DataFrame(data)
+
+    def test_returns_bytesio_object(self, sample_dataframe):
+        """Test that function returns a BytesIO object."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        assert isinstance(result, BytesIO)
+
+    def test_bytesio_is_not_empty(self, sample_dataframe):
+        """Test that returned BytesIO object contains data."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+        content = result.read()
+        assert len(content) > 0
+
+    def test_excel_file_has_three_sheets_escenario_a(self, sample_dataframe):
+        """Test that Excel file contains exactly 3 sheets for scenario A."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        # Read Excel file
+        excel_file = pd.ExcelFile(result)
+
+        # Check number of sheets
+        assert len(excel_file.sheet_names) == 3
+
+    def test_excel_sheet_names_are_correct(self, sample_dataframe):
+        """Test that Excel sheets have correct names."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        excel_file = pd.ExcelFile(result)
+        expected_sheets = ['Ranking_Completo', 'Top_15', 'Menos_Sostenibles']
+
+        assert excel_file.sheet_names == expected_sheets
+
+    def test_ranking_completo_has_all_products(self, sample_dataframe):
+        """Test that Ranking_Completo sheet contains all products."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Should have same number of rows as input dataframe
+        assert len(df_ranking) == len(sample_dataframe)
+
+    def test_ranking_completo_has_correct_columns_escenario_a(self, sample_dataframe):
+        """Test that Ranking_Completo sheet has correct columns for scenario A."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        expected_columns = ['Producto', 'CF_kgCO2eq_kg', 'WF_L_kg', 'LU_m2_kg',
+                           'Origin_Score', 'Waste_pct', 'NOVA', 'Score_México']
+
+        assert list(df_ranking.columns) == expected_columns
+
+    def test_ranking_completo_has_correct_columns_escenario_b(self, sample_dataframe):
+        """Test that Ranking_Completo sheet has correct columns for scenario B."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='B')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        expected_columns = ['Producto', 'CF_kgCO2eq_kg', 'WF_L_kg', 'LU_m2_kg',
+                           'Origin_Score', 'Waste_pct', 'NOVA', 'Score_México_B']
+
+        assert list(df_ranking.columns) == expected_columns
+
+    def test_ranking_completo_is_sorted_descending_escenario_a(self, sample_dataframe):
+        """Test that Ranking_Completo is sorted by score in descending order for scenario A."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Check that scores are in descending order
+        scores = df_ranking['Score_México'].tolist()
+        assert scores == sorted(scores, reverse=True)
+
+    def test_ranking_completo_is_sorted_descending_escenario_b(self, sample_dataframe):
+        """Test that Ranking_Completo is sorted by score in descending order for scenario B."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='B')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Check that scores are in descending order
+        scores = df_ranking['Score_México_B'].tolist()
+        assert scores == sorted(scores, reverse=True)
+
+    def test_ranking_completo_top_product_is_correct_escenario_a(self, sample_dataframe):
+        """Test that top product in Ranking_Completo is the one with highest score."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Top product should be Guayaba (98.7)
+        assert df_ranking.iloc[0]['Producto'] == 'Guayaba'
+        assert pytest.approx(df_ranking.iloc[0]['Score_México'], rel=1e-2) == 98.7
+
+    def test_top_15_has_15_products_when_available(self, sample_dataframe):
+        """Test that Top_15 sheet contains 15 products when dataframe has enough."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+
+        # Should have exactly 15 products
+        assert len(df_top15) == 15
+
+    def test_top_15_has_correct_columns_escenario_a(self, sample_dataframe):
+        """Test that Top_15 sheet has only Producto and Score columns."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+
+        expected_columns = ['Producto', 'Score_México']
+        assert list(df_top15.columns) == expected_columns
+
+    def test_top_15_has_correct_columns_escenario_b(self, sample_dataframe):
+        """Test that Top_15 sheet uses Score_México_B for scenario B."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='B')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+
+        expected_columns = ['Producto', 'Score_México_B']
+        assert list(df_top15.columns) == expected_columns
+
+    def test_top_15_contains_highest_scores(self, sample_dataframe):
+        """Test that Top_15 contains the products with the 15 highest scores."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+
+        # Get top 15 from original dataframe
+        expected_top15 = sample_dataframe.nlargest(15, 'Score_México')['Producto'].tolist()
+        actual_top15 = df_top15['Producto'].tolist()
+
+        assert actual_top15 == expected_top15
+
+    def test_top_15_is_sorted_descending(self, sample_dataframe):
+        """Test that Top_15 is sorted in descending order."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+        scores = df_top15['Score_México'].tolist()
+
+        assert scores == sorted(scores, reverse=True)
+
+    def test_bottom_10_has_10_products_when_available(self, sample_dataframe):
+        """Test that Menos_Sostenibles sheet contains 10 products when available."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        # Should have exactly 10 products
+        assert len(df_bottom10) == 10
+
+    def test_bottom_10_has_correct_columns_escenario_a(self, sample_dataframe):
+        """Test that Menos_Sostenibles sheet has correct columns."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        expected_columns = ['Producto', 'Score_México']
+        assert list(df_bottom10.columns) == expected_columns
+
+    def test_bottom_10_contains_lowest_scores(self, sample_dataframe):
+        """Test that Menos_Sostenibles contains the products with 10 lowest scores."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        # Get bottom 10 from original dataframe
+        expected_bottom10 = sample_dataframe.nsmallest(10, 'Score_México')['Producto'].tolist()
+        actual_bottom10 = df_bottom10['Producto'].tolist()
+
+        assert actual_bottom10 == expected_bottom10
+
+    def test_bottom_10_contains_res_lowest_score(self, sample_dataframe):
+        """Test that Menos_Sostenibles contains Res which has lowest score."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        # Res should be in the bottom 10
+        assert 'Res' in df_bottom10['Producto'].tolist()
+
+    def test_escenario_a_default_parameter(self, sample_dataframe):
+        """Test that scenario A is used by default when not specified."""
+        result_default = exportar_resultados_excel(sample_dataframe)
+        result_a = exportar_resultados_excel(sample_dataframe, escenario='A')
+
+        result_default.seek(0)
+        result_a.seek(0)
+
+        df_default = pd.read_excel(result_default, sheet_name='Top_15')
+        df_a = pd.read_excel(result_a, sheet_name='Top_15')
+
+        # Should have same column name (Score_México)
+        assert list(df_default.columns) == list(df_a.columns)
+
+    def test_escenario_b_uses_different_score_column(self, sample_dataframe):
+        """Test that scenario B uses Score_México_B column."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='B')
+        result.seek(0)
+
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Should contain Score_México_B column
+        assert 'Score_México_B' in df_ranking.columns
+        # Should NOT contain Score_México column
+        assert 'Score_México' not in df_ranking.columns
+
+    def test_small_dataframe_with_less_than_15_products(self, small_dataframe):
+        """Test behavior with dataframe smaller than 15 products."""
+        result = exportar_resultados_excel(small_dataframe, escenario='A')
+        result.seek(0)
+
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+
+        # Should have only 5 products (all available)
+        assert len(df_top15) == 5
+
+    def test_small_dataframe_with_less_than_10_products(self, small_dataframe):
+        """Test Menos_Sostenibles with fewer than 10 products."""
+        result = exportar_resultados_excel(small_dataframe, escenario='A')
+        result.seek(0)
+
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        # Should have only 5 products (all available)
+        assert len(df_bottom10) == 5
+
+    def test_single_product_dataframe(self):
+        """Test edge case with only one product."""
+        data = {
+            'Producto': ['Sandía'],
+            'CF_kgCO2eq_kg': [0.5],
+            'WF_L_kg': [235],
+            'LU_m2_kg': [0.2],
+            'Origin_Score': [0],
+            'Waste_pct': [0.4],
+            'NOVA': [1],
+            'Score_México': [95.2],
+            'Score_México_B': [96.1]
+        }
+        df = pd.DataFrame(data)
+
+        result = exportar_resultados_excel(df, escenario='A')
+        result.seek(0)
+
+        excel_file = pd.ExcelFile(result)
+
+        # Should still have 3 sheets
+        assert len(excel_file.sheet_names) == 3
+
+        # Each sheet should have 1 product
+        df_ranking = pd.read_excel(result, sheet_name='Ranking_Completo')
+        df_top15 = pd.read_excel(result, sheet_name='Top_15')
+        df_bottom10 = pd.read_excel(result, sheet_name='Menos_Sostenibles')
+
+        assert len(df_ranking) == 1
+        assert len(df_top15) == 1
+        assert len(df_bottom10) == 1
+
+    def test_bytesio_position_is_at_start(self, sample_dataframe):
+        """Test that BytesIO position is set to 0 (start) for reading."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+
+        # Position should be at 0
+        assert result.tell() == 0
+
+    def test_data_integrity_no_data_loss(self, sample_dataframe):
+        """Test that exported data matches original data for Ranking_Completo."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_exported = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Sort original dataframe same way
+        df_original_sorted = sample_dataframe.sort_values('Score_México', ascending=False)
+
+        # Compare Producto column (should be identical)
+        assert df_exported['Producto'].tolist() == df_original_sorted['Producto'].tolist()
+
+    def test_numeric_precision_preserved(self, sample_dataframe):
+        """Test that numeric values are preserved with correct precision."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        df_exported = pd.read_excel(result, sheet_name='Ranking_Completo')
+
+        # Check that Guayaba's score is preserved
+        guayaba_row = df_exported[df_exported['Producto'] == 'Guayaba'].iloc[0]
+        assert pytest.approx(guayaba_row['Score_México'], rel=1e-1) == 98.7
+        assert pytest.approx(guayaba_row['CF_kgCO2eq_kg'], rel=1e-2) == 0.28
+
+    def test_both_scenarios_produce_different_rankings(self, sample_dataframe):
+        """Test that scenarios A and B can produce different Top 15."""
+        result_a = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result_b = exportar_resultados_excel(sample_dataframe, escenario='B')
+
+        result_a.seek(0)
+        result_b.seek(0)
+
+        df_top15_a = pd.read_excel(result_a, sheet_name='Top_15')
+        df_top15_b = pd.read_excel(result_b, sheet_name='Top_15')
+
+        # Column names should be different
+        assert df_top15_a.columns[1] == 'Score_México'
+        assert df_top15_b.columns[1] == 'Score_México_B'
+
+    def test_excel_file_is_readable_by_pandas(self, sample_dataframe):
+        """Test that the Excel file can be fully read by pandas without errors."""
+        result = exportar_resultados_excel(sample_dataframe, escenario='A')
+        result.seek(0)
+
+        # This should not raise any exception
+        excel_file = pd.ExcelFile(result)
+
+        # Read all sheets
+        for sheet_name in excel_file.sheet_names:
+            df = pd.read_excel(result, sheet_name=sheet_name)
+            assert isinstance(df, pd.DataFrame)
+            assert len(df) > 0
