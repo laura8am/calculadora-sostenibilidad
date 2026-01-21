@@ -13,6 +13,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from io import BytesIO
+from typing import Dict, Tuple
 
 # ============================================================================
 # CONFIGURACIÓN DE LA PÁGINA
@@ -189,6 +190,45 @@ st.markdown("""
 # FUNCIONES AUXILIARES
 # ============================================================================
 
+# Configuration Constants for Sustainability Scoring System
+# These ranges are based on the dataset of 42 food products
+
+INDICATOR_RANGES: Dict[str, Tuple[float, float]] = {
+    'CF': (0.28, 60.0),      # Carbon Footprint: Min: Guayaba (0.28), Max: Res (60.0)
+    'WF': (131, 18900),      # Water Footprint: Min: Zanahoria (131), Max: Café (18,900)
+    'LU': (0.18, 326),       # Land Use: Min: Papaya (0.18), Max: Res (326)
+    'Origin': (0, 100),      # Origin Score: Local (0) to Imported (100)
+    'Waste': (0.4, 45.5),    # Waste Percentage: Min: Sandía (0.4), Max: Uva (45.5)
+    'NOVA': (1, 4)           # Processing Level: Unprocessed (1) to Ultra-processed (4)
+}
+
+# Weight configurations for different scenarios
+# Scenario A: Original Mexico methodology (Waste weight: 25%)
+SCENARIO_A_WEIGHTS: Dict[str, float] = {
+    'CF': 0.15,      # Carbon footprint
+    'WF': 0.15,      # Water footprint
+    'LU': 0.10,      # Land use
+    'Origin': 0.20,  # Origin
+    'Waste': 0.25,   # Waste percentage
+    'NOVA': 0.15     # Processing level
+}
+
+# Scenario B: Adjusted Mexico methodology (Waste weight: 30%)
+SCENARIO_B_WEIGHTS: Dict[str, float] = {
+    'CF': 0.14,      # Carbon footprint
+    'WF': 0.14,      # Water footprint
+    'LU': 0.09,      # Land use
+    'Origin': 0.18,  # Origin
+    'Waste': 0.30,   # Waste percentage (increased emphasis)
+    'NOVA': 0.15     # Processing level
+}
+
+# Scenario configuration mapping
+SCENARIOS: Dict[str, Dict[str, float]] = {
+    'A': SCENARIO_A_WEIGHTS,
+    'B': SCENARIO_B_WEIGHTS
+}
+
 @st.cache_data
 def cargar_datos():
     """Carga el dataset de productos con scores de ambos escenarios"""
@@ -235,66 +275,122 @@ def cargar_productos_robustos():
     except Exception:
         return None
 
-def normalizar_inverso(valor, min_val, max_val):
-    """Normaliza valores donde menor es mejor (0-100)"""
+def normalizar_inverso(valor: float, min_val: float, max_val: float) -> float:
+    """
+    Normalize values where lower is better, using inverse scaling (0-100).
+
+    This function converts raw indicator values to a 0-100 scale where:
+    - 100 = best (lowest raw value)
+    - 0 = worst (highest raw value)
+
+    Args:
+        valor: The raw value to normalize
+        min_val: Minimum value in the range (best case)
+        max_val: Maximum value in the range (worst case)
+
+    Returns:
+        Normalized score on 0-100 scale (higher is better)
+
+    Example:
+        >>> normalizar_inverso(5.0, 0.0, 10.0)  # Value halfway between min and max
+        50.0
+    """
     if max_val == min_val:
-        return 50
-    return 100 - ((valor - min_val) / (max_val - min_val) * 100)
+        return 50.0
+    return 100.0 - ((valor - min_val) / (max_val - min_val) * 100.0)
 
-def calcular_score_producto(cf, wf, lu, origin, waste, nova, escenario='A'):
+def calcular_score_producto(
+    cf: float,
+    wf: float,
+    lu: float,
+    origin: float,
+    waste: float,
+    nova: int,
+    escenario: str = 'A'
+) -> Tuple[float, Dict[str, float]]:
     """
-    Calcula el score de un producto según el escenario
-    
-    Escenario A: Sistema México Original (Waste 25%)
-    Escenario B: Sistema México Ajustado (Waste 30%)
+    Calculate the sustainability score of a food product using a multi-criteria approach.
+
+    This function evaluates food sustainability across 6 environmental indicators:
+    - Carbon Footprint (CF): kg CO₂ emissions per kg of product
+    - Water Footprint (WF): Liters of water per kg of product
+    - Land Use (LU): Square meters of land per kg of product
+    - Origin: Origin score (0=Local, 50=Regional, 100=Imported)
+    - Waste: Waste percentage from farm to table
+    - NOVA: Processing level (1=Unprocessed to 4=Ultra-processed)
+
+    Each indicator is normalized to a 0-100 scale (where higher = more sustainable)
+    and weighted according to the selected scenario methodology.
+
+    Args:
+        cf: Carbon footprint in kg CO₂ equivalents per kg of product
+        wf: Water footprint in liters per kg of product
+        lu: Land use in square meters per kg of product
+        origin: Origin score (0=Local Sonora, 50=Regional Mexico, 100=Imported)
+        waste: Waste percentage (0-100)
+        nova: NOVA processing level (1=Natural, 2=Processed, 3=Highly processed, 4=Ultra-processed)
+        escenario: Scenario methodology ('A' for original weights, 'B' for adjusted weights)
+
+    Returns:
+        Tuple containing:
+        - score: Overall sustainability score (0-100, where higher is more sustainable)
+        - normalized_values: Dictionary with normalized scores for each indicator
+
+    Raises:
+        KeyError: If an invalid scenario is provided
+
+    Example:
+        >>> score, details = calcular_score_producto(
+        ...     cf=2.0, wf=500, lu=1.5, origin=0, waste=10.0, nova=1, escenario='A'
+        ... )
+        >>> print(f"Sustainability Score: {score:.2f}")
+        Sustainability Score: 85.30
     """
-    
-    # Definir rangos para normalización (basados en dataset de 42 productos)
-    rangos = {
-        'CF': (0.28, 60.0),      # Min: Guayaba (0.28), Max: Res (60.0)
-        'WF': (131, 18900),      # Min: Zanahoria (131), Max: Café (18900)
-        'LU': (0.18, 326),       # Min: Papaya (0.18), Max: Res (326)
-        'Origin': (0, 100),      # Local (0) a Importado (100)
-        'Waste': (0.4, 45.5),    # Min: Sandía (0.4), Max: Uva (45.5)
-        'NOVA': (1, 4)           # Sin procesar (1) a Ultraprocesado (4)
+    # Validate scenario
+    if escenario not in SCENARIOS:
+        raise ValueError(f"Invalid scenario: {escenario}. Must be 'A' or 'B'.")
+
+    # Normalize each indicator using the global ranges
+    # Lower raw values are better, so we use inverse normalization (100 - normalized)
+    normalized_values = {
+        'CF': normalizar_inverso(cf, *INDICATOR_RANGES['CF']),
+        'WF': normalizar_inverso(wf, *INDICATOR_RANGES['WF']),
+        'LU': normalizar_inverso(lu, *INDICATOR_RANGES['LU']),
+        'Origin': normalizar_inverso(origin, *INDICATOR_RANGES['Origin']),
+        'Waste': normalizar_inverso(waste, *INDICATOR_RANGES['Waste']),
+        'NOVA': normalizar_inverso(nova, *INDICATOR_RANGES['NOVA'])
     }
-    
-    # Normalizar cada indicador
-    cf_norm = normalizar_inverso(cf, *rangos['CF'])
-    wf_norm = normalizar_inverso(wf, *rangos['WF'])
-    lu_norm = normalizar_inverso(lu, *rangos['LU'])
-    origin_norm = normalizar_inverso(origin, *rangos['Origin'])
-    waste_norm = normalizar_inverso(waste, *rangos['Waste'])
-    nova_norm = normalizar_inverso(nova, *rangos['NOVA'])
-    
-    # Sistemas de pesos por escenario
-    if escenario == 'A':
-        p = {
-            'CF': 0.15, 'WF': 0.15, 'LU': 0.10,
-            'Origin': 0.20, 'Waste': 0.25, 'NOVA': 0.15
-        }
-    else:  # Escenario B
-        p = {
-            'CF': 0.14, 'WF': 0.14, 'LU': 0.09,
-            'Origin': 0.18, 'Waste': 0.30, 'NOVA': 0.15
-        }
-    
-    score = (
-        cf_norm * p['CF'] +
-        wf_norm * p['WF'] +
-        lu_norm * p['LU'] +
-        origin_norm * p['Origin'] +
-        waste_norm * p['Waste'] +
-        nova_norm * p['NOVA']
+
+    # Get the weight configuration for the selected scenario
+    weights = SCENARIOS[escenario]
+
+    # Calculate weighted score
+    score = sum(
+        normalized_values[indicator] * weights[indicator]
+        for indicator in weights.keys()
     )
-    
-    return score, {
-        'CF': cf_norm, 'WF': wf_norm, 'LU': lu_norm,
-        'Origin': origin_norm, 'Waste': waste_norm, 'NOVA': nova_norm
-    }
 
-def clasificar_score(score):
-    """Clasifica el score en categorías"""
+    return score, normalized_values
+
+def clasificar_score(score: float) -> Tuple[str, str]:
+    """
+    Classify a sustainability score into categorical ratings.
+
+    Args:
+        score: Sustainability score (0-100)
+
+    Returns:
+        Tuple of (classification_label, emoji_indicator):
+        - 'Excelente' (🟢): score >= 90
+        - 'Muy Bueno' (🟢): score >= 80
+        - 'Bueno' (🟡): score >= 70
+        - 'Moderado' (🟠): score >= 60
+        - 'Bajo' (🔴): score < 60
+
+    Example:
+        >>> clasificar_score(85.5)
+        ('Muy Bueno', '🟢')
+    """
     if score >= 90:
         return 'Excelente', '🟢'
     elif score >= 80:
