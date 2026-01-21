@@ -4,7 +4,7 @@ CALCULADORA DE SOSTENIBILIDAD ALIMENTARIA - REDISEÑO
 
 Autor: Laura Ochoa M.
 Fecha: Enero 2026
-Versión: 2.1 (Rediseño UX)
+Versión: 3.0 (42 productos)
 """
 
 import streamlit as st
@@ -249,14 +249,14 @@ def calcular_score_producto(cf, wf, lu, origin, waste, nova, escenario='A'):
     Escenario B: Sistema México Ajustado (Waste 30%)
     """
     
-    # Definir rangos para normalización (basados en dataset completo)
+    # Definir rangos para normalización (basados en dataset de 42 productos)
     rangos = {
-        'CF': (0.3, 60.0),
-        'WF': (131, 18900),
-        'LU': (0.3, 326),
-        'Origin': (0, 100),
-        'Waste': (3.0, 45.0),
-        'NOVA': (1, 4)
+        'CF': (0.28, 60.0),      # Min: Guayaba (0.28), Max: Res (60.0)
+        'WF': (131, 18900),      # Min: Zanahoria (131), Max: Café (18900)
+        'LU': (0.18, 326),       # Min: Papaya (0.18), Max: Res (326)
+        'Origin': (0, 100),      # Local (0) a Importado (100)
+        'Waste': (0.4, 45.5),    # Min: Sandía (0.4), Max: Uva (45.5)
+        'NOVA': (1, 4)           # Sin procesar (1) a Ultraprocesado (4)
     }
     
     # Normalizar cada indicador
@@ -395,7 +395,7 @@ def main():
         st.markdown("""
         <div class="info-box">
         <h3 style="margin-top:0;">¿Qué hace esta calculadora?</h3>
-        <p style="margin-bottom:0.5rem;">Esta herramienta te ayuda a entender y comparar el impacto ambiental de 36 alimentos comunes en México. Puedes:</p>
+        <p style="margin-bottom:0.5rem;">Esta herramienta te ayuda a entender y comparar el impacto ambiental de <strong>42 alimentos</strong> comunes en México. Puedes:</p>
         <ul style="margin-bottom:0;">
             <li><strong>Consultar cualquier producto</strong> y ver su impacto detallado</li>
             <li><strong>Evaluar un alimento nuevo</strong> ingresando sus datos ambientales</li>
@@ -465,7 +465,7 @@ def main():
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Productos evaluados", "36")
+            st.metric("Productos evaluados", len(df))
         
         with col2:
             mejor = df.nlargest(1, score_col)['Producto'].values[0]
@@ -606,7 +606,7 @@ def main():
         
         nombre_nuevo = st.text_input(
             "Nombre del producto:",
-            placeholder="Ejemplo: Sandía, Quinoa, Pescado blanco..."
+            placeholder="Ejemplo: Quinoa, Pescado blanco, Kiwi..."
         )
         
         st.markdown("### 📊 Ingresa los indicadores ambientales")
@@ -626,7 +626,7 @@ def main():
                 step=0.1,
                 label_visibility="collapsed"
             )
-            st.caption("📝 Ejemplo: Plátano = 0.7, Pollo = 6.9, Res = 60")
+            st.caption("📝 Ejemplo: Guayaba = 0.28, Pollo = 6.9, Res = 60")
             
             st.markdown("##")
             
@@ -640,7 +640,7 @@ def main():
                 step=50,
                 label_visibility="collapsed"
             )
-            st.caption("📝 Ejemplo: Lechuga = 237, Manzana = 822, Res = 15,415")
+            st.caption("📝 Ejemplo: Zanahoria = 131, Manzana = 822, Café = 18,900")
             
             st.markdown("##")
             
@@ -654,7 +654,7 @@ def main():
                 step=0.5,
                 label_visibility="collapsed"
             )
-            st.caption("📝 Ejemplo: Tomate = 0.8, Pollo = 7.5, Res = 326")
+            st.caption("📝 Ejemplo: Papaya = 0.18, Pollo = 7.1, Res = 326")
         
         with col2:
             st.markdown("**🇲🇽 Origen**")
@@ -679,7 +679,7 @@ def main():
                 step=1.0,
                 label_visibility="collapsed"
             )
-            st.caption("📝 Ejemplo: Plátano = 0.5%, Pepino = 45%, Promedio = 15%")
+            st.caption("📝 Ejemplo: Sandía = 0.4%, Uva = 45.5%, Promedio = 15%")
             
             st.markdown("##")
             
@@ -894,12 +894,17 @@ def main():
     elif pagina == "⭐ Los Más Sustentables":
         st.header("⭐ Los Más Sustentables")
         
-        if df_robustos is not None and not df_robustos.empty:
+        # Identificar productos robustos dinámicamente
+        top10_a = set(df.nlargest(10, 'Score_México')['Producto'])
+        top10_b = set(df.nlargest(10, 'Score_México_B')['Producto'])
+        productos_robustos_lista = list(top10_a & top10_b)
+        
+        if len(productos_robustos_lista) > 0:
             
             # Explicación clara
-            st.markdown("""
+            st.markdown(f"""
             <div class="info-box">
-            <p style="margin:0;"><strong>Estos 9 alimentos tienen el mejor impacto ambiental en todas las metodologías.</strong></p>
+            <p style="margin:0;"><strong>Estos {len(productos_robustos_lista)} alimentos tienen el mejor impacto ambiental en todas las metodologías.</strong></p>
             <p style="margin:0.5rem 0 0 0;">Consideran huella de carbono, agua, tierra, origen mexicano, desperdicio y nivel de procesamiento. 
             Sin importar qué metodología uses, estos productos siempre están en el top 10.</p>
             </div>
@@ -908,10 +913,9 @@ def main():
             st.markdown("##")
             
             # Lista de productos con sus scores
-            st.subheader("🏆 Los 9 Campeones")
+            st.subheader(f"🏆 Los {len(productos_robustos_lista)} Campeones")
             
             # Obtener datos de los productos robustos
-            productos_robustos_lista = df_robustos['Producto'].tolist()
             df_top = df[df['Producto'].isin(productos_robustos_lista)].copy()
             df_top = df_top.sort_values(score_col, ascending=False)
             
@@ -974,7 +978,7 @@ def main():
             st.plotly_chart(fig, use_container_width=True)
             
         else:
-            st.warning("⚠️ No se encontró el archivo de productos más sustentables.")
+            st.warning("⚠️ No se encontraron productos robustos en común entre ambos escenarios.")
     
     # ========================================================================
     # PÁGINA: VER RANKINGS
@@ -1137,7 +1141,7 @@ def main():
         **LinkedIn:** [linkedin.com/in/lauraochoam](https://www.linkedin.com/in/lauraochoam/)  
         **Región:** México / Sonora  
         **Fecha:** Enero 2026  
-        **Versión:** 2.1 (Rediseño UX)
+        **Versión:** 3.0 (42 productos)
         
         ---
         
@@ -1155,19 +1159,22 @@ def main():
         
         ### 📐 Metodología
         
-        Esta calculadora evalúa 36 productos alimenticios usando **6 indicadores ambientales:**
+        Esta calculadora evalúa **42 productos alimenticios** usando **6 indicadores ambientales:**
         
         **1. Huella de Carbono (kg CO₂eq/kg)**
         - Mide las emisiones de gases de efecto invernadero
         - Incluye producción, transporte y procesamiento
+        - Rango: 0.28 (Guayaba) - 60.0 (Res) kg CO₂eq/kg
         
         **2. Huella Hídrica (L/kg)**
         - Consumo total de agua dulce (azul, verde, gris)
         - Considera toda la cadena de producción
+        - Rango: 131 (Zanahoria) - 18,900 (Café) L/kg
         
         **3. Uso de Suelo (m²/kg)**
         - Área de tierra requerida para producción
         - Incluye pastoreo, cultivos y procesamiento
+        - Rango: 0.18 (Papaya) - 326 (Res) m²/kg
         
         **4. Origen (Local/Regional/Importado)**
         - Distancia desde el lugar de producción
@@ -1176,12 +1183,23 @@ def main():
         **5. Desperdicio (%)**
         - Porcentaje de pérdida y desperdicio alimentario
         - Del campo al consumidor (datos específicos de México cuando disponibles)
+        - Rango: 0.4% (Sandía) - 45.5% (Uva)
         
         **6. Procesamiento (Clasificación NOVA)**
         - Nivel 1: Alimentos naturales o mínimamente procesados
         - Nivel 2: Ingredientes culinarios procesados
         - Nivel 3: Alimentos procesados
         - Nivel 4: Productos ultra-procesados
+        
+        ---
+        
+        ### 🆕 Novedades en v3.0
+        
+        **Productos nuevos agregados:**
+        - 🍉 Sandía, 🍍 Piña, 🥝 Guayaba, 🍈 Melón, 🍇 Uva, 🥭 Papaya
+        - 🫘 Lenteja, 🌾 Avena
+        
+        **Rangos recalculados** para mejor precisión con el dataset expandido.
         
         ---
         
@@ -1216,9 +1234,8 @@ def main():
         transparencia metodológica.
         
         **Validación:**  
-        La correlación entre ambos escenarios es r = 0.9915 (casi perfecta), y 9 de los 
-        10 productos top son idénticos en ambos escenarios, lo que valida la robustez 
-        de las recomendaciones.
+        La correlación entre ambos escenarios es r > 0.99 (casi perfecta), lo que valida 
+        la robustez de las recomendaciones.
         
         ---
         
@@ -1276,72 +1293,17 @@ def main():
         
         **Robustez del Modelo:**
         - ✓ 100% de datos verificados con fuentes científicas publicadas
-        - ✓ 20 de 36 productos con datos de desperdicio específicos de México
+        - ✓ Dataset expandido a 42 productos
         - ✓ Modelo validado con análisis de sensibilidad (múltiples escenarios)
         - ✓ Correlación entre escenarios >0.99
-        - ✓ Consistencia en recomendaciones: 90% de productos top idénticos
+        - ✓ Consistencia en recomendaciones: productos top idénticos en ambos escenarios
         
         **Limitaciones Reconocidas:**
-        - Muestra de 36 productos (ampliable en futuras versiones)
+        - Muestra de 42 productos (ampliable en futuras versiones)
         - Indicadores de nutrición y precio no incluidos (datos no verificables)
         - Variabilidad estacional no capturada
         - Optimizado para contexto México/Sonora (requiere adaptación para otras regiones)
         - No considera factores socioculturales o preferencias individuales
-        
-        ---
-        
-        ### 🌮 Recomendaciones para Sonora
-        
-        Basado en los **9 productos ultra-robustos** (presentes en Top 10 de ambos escenarios):
-        
-        **Frutas (consumo diario recomendado):**
-        - 🥑 Aguacate
-        - 🥭 Mango
-        - 🍊 Naranja
-        - 🍌 Plátano
-        - 🍋 Limón
-        
-        **Vegetales (base de alimentación diaria):**
-        - 🎃 Calabaza
-        - 🍅 Tomate
-        
-        **Leguminosas (proteína vegetal principal):**
-        - 🫘 Frijol
-        - 🫘 Garbanzo
-        
-        **Impacto Potencial de Seguir estas Recomendaciones:**
-        - ↓ 85% en huella de carbono
-        - ↓ 51% en uso de agua
-        - ↓ 85% en uso de suelo
-        - ↓ 75% en desperdicio alimentario
-        
-        ---
-        
-        ### 🔬 Publicación y Uso Académico
-        
-        Este proyecto está diseñado para ser publicable en revistas científicas de nutrición, 
-        sostenibilidad y salud pública. Los datos y metodología están completamente documentados 
-        y son reproducibles.
-        
-        **Para citar este trabajo:**  
-        Ochoa M., L. (2026). *Ecuación de Sustentabilidad Alimentaria: Evaluación 
-        multi-dimensional de impacto ambiental en Sonora, México*. [Calculadora web]. 
-        
-        ---
-        
-        ### 📄 Licencia y Uso
-        
-        **Esta herramienta está diseñada para:**
-        - Fines educativos y de investigación
-        - Divulgación científica
-        - Toma de decisiones informadas
-        - Políticas públicas de sostenibilidad
-        
-        **Características:**
-        - 📖 Código abierto
-        - 🔍 Datos transparentes y verificables
-        - 📊 Metodología replicable
-        - 🤝 Disponible para colaboración científica
         
         ---
         
@@ -1361,14 +1323,7 @@ def main():
         
         ---
         
-        ### 🙏 Agradecimientos
-        
-        Este proyecto fue posible gracias a las bases de datos públicas de:
-        - FAO (Organización de las Naciones Unidas para la Alimentación y la Agricultura)
-        - Proyecto SU-EATABLE LIFE
-        - Investigadores que publican datos abiertos sobre sostenibilidad alimentaria
-        
-        *Última actualización: Enero 2026*
+        *Última actualización: Enero 2026 - Versión 3.0*
         """)
 
 # ============================================================================
