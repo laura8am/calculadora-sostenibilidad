@@ -250,14 +250,15 @@ def calcular_score_producto(cf, wf, lu, origin, waste, nova, escenario='A'):
     """
     
     # Definir rangos para normalización (basados en dataset completo)
-    rangos = {
-        'CF': (0.3, 60.0),
+        rangos = {
+        'CF': (0.28, 60.0),
         'WF': (131, 18900),
-        'LU': (0.3, 326),
+        'LU': (0.18, 326),
         'Origin': (0, 100),
-        'Waste': (3.0, 45.0),
+        'Waste': (0.4, 45.5),
         'NOVA': (1, 4)
     }
+    
     
     # Normalizar cada indicador
     cf_norm = normalizar_inverso(cf, *rangos['CF'])
