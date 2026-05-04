@@ -240,19 +240,6 @@ El modelo clasifica productos en 5 categorías basadas en su score final:
 
 ---
 
-## 📈 Roadmap Futuro
-
-- [ ] Expansión a 50+ productos
-- [ ] Integración de API para actualización automática de precios
-- [ ] Análisis de estacionalidad
-- [ ] Comparación con dietas tipo (mediterránea, occidental, tradicional mexicana)
-- [ ] Módulo de recomendaciones personalizadas
-- [ ] Componente SQL para queries complejas
-- [ ] Visualizaciones interactivas mejoradas
-- [ ] Dashboard para análisis temporal
-
----
-
 ## 👩‍🔬 Sobre el Proyecto
 
 **Desarrollado por:** Laura Ochoa | Biotecnóloga  
