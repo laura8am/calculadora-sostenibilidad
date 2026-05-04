@@ -80,17 +80,12 @@ Productos que aparecen en el top 10 de **ambos** escenarios de ponderación (r=0
 <p><em>Productos más sustentables identificados por el modelo</em></p>
 </div>
 
-| Producto | Score Promedio | Categoría |
-|----------|----------------|-----------|
-| Aguacate | 94.2 | Excelente ⭐ |
-| Mango | 91.8 | Excelente ⭐ |
-| Frijol | 89.5 | Muy Bueno |
-| Naranja | 88.7 | Muy Bueno |
-| Plátano | 87.3 | Muy Bueno |
-| Calabaza | 86.9 | Muy Bueno |
-| Tomate | 85.4 | Muy Bueno |
-| Garbanzo | 84.8 | Muy Bueno |
-| Limón | 83.6 | Muy Bueno |
+**9 productos ultra-robustos identificados** (consistentes en ambos escenarios de ponderación):
+
+🥑 Aguacate · 🥭 Mango · 🫘 Frijol · 🍊 Naranja · 🍌 Plátano  
+🎃 Calabaza · 🍅 Tomate · 🫛 Garbanzo · 🍋 Limón
+
+> **Nota:** Los scores específicos se calculan dinámicamente en la app según el escenario de ponderación seleccionado. [Consultar app en vivo](https://calculadora-sostenibilidad-y3lzywreofv7qpkpitl4tq.streamlit.app/)
 
 ### Rankings Completos
 
@@ -140,7 +135,12 @@ Productos que aparecen en el top 10 de **ambos** escenarios de ponderación (r=0
 - Deployment en producción (Streamlit Cloud)
 
 ---
+## 📈 Próximas Iteraciones
 
+- [ ] Expansión a 50+ productos con datos validados localmente
+- [ ] Análisis de estacionalidad y comparación con dietas tipo
+- [ ] Módulo de recomendaciones personalizadas basadas en perfil de consumo
+   ---
 ## 📊 Estructura del Proyecto
 
 ```
